@@ -1,0 +1,23 @@
+Origin: otop
+Label: otop
+Suite: stable
+Codename: stable
+Version: 1.0.0
+Architectures: all amd64 arm64
+Components: main
+Description: otop -- htop/btop for Odoo
+Date: Mon, 17 Aug 2026 22:17:06 +0000
+MD5Sum:
+ fb188ed44742a003dc2711c9ab0812f7             1354 main/binary-all/Packages
+ 638bd2ea07c4ee09e43083e85347ad21              836 main/binary-all/Packages.gz
+ fb188ed44742a003dc2711c9ab0812f7             1354 main/binary-amd64/Packages
+ 638bd2ea07c4ee09e43083e85347ad21              836 main/binary-amd64/Packages.gz
+ fb188ed44742a003dc2711c9ab0812f7             1354 main/binary-arm64/Packages
+ 638bd2ea07c4ee09e43083e85347ad21              836 main/binary-arm64/Packages.gz
+SHA256:
+ 8377be57074435a963da8948260ea61a2e18e74e6eaecd38d876ddef7f12dcba             1354 main/binary-all/Packages
+ 6f55c45dac6a29d00b08ab0a8d0bf63254aedab0fb01c9302792d70d737d0f0a              836 main/binary-all/Packages.gz
+ 8377be57074435a963da8948260ea61a2e18e74e6eaecd38d876ddef7f12dcba             1354 main/binary-amd64/Packages
+ 6f55c45dac6a29d00b08ab0a8d0bf63254aedab0fb01c9302792d70d737d0f0a              836 main/binary-amd64/Packages.gz
+ 8377be57074435a963da8948260ea61a2e18e74e6eaecd38d876ddef7f12dcba             1354 main/binary-arm64/Packages
+ 6f55c45dac6a29d00b08ab0a8d0bf63254aedab0fb01c9302792d70d737d0f0a              836 main/binary-arm64/Packages.gz

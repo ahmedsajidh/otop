@@ -1,0 +1,19 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>otop apt repository</title>
+<style>
+ body{font:15px/1.6 system-ui,sans-serif;max-width:46rem;margin:3rem auto;padding:0 1rem}
+ pre{background:#111;color:#eee;padding:.9rem;border-radius:6px;overflow-x:auto}
+ code{font-family:ui-monospace,monospace}
+</style>
+<h1>otop</h1>
+<p><em>htop/btop for Odoo</em> &mdash; version 1.0.0.</p>
+<h2>Install</h2>
+<pre>curl -fsSL https://ahmedsajidh.github.io/otop/install.sh | sudo sh
+sudo apt install otop</pre>
+<h2>Or add the repository by hand</h2>
+<pre>sudo curl -fsSL https://ahmedsajidh.github.io/otop/otop-archive-keyring.gpg -o /usr/share/keyrings/otop-archive-keyring.gpgsudo curl -fsSL https://ahmedsajidh.github.io/otop/otop.sources -o /etc/apt/sources.list.d/otop.sources
+sudo apt update &amp;&amp; sudo apt install otop</pre>
+<h2>Upgrades</h2>
+<pre>sudo apt update &amp;&amp; sudo apt upgrade otop</pre>
+<p><a href="https://github.com/ahmedsajidh/otop">Source code</a></p>

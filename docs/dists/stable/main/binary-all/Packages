@@ -1,0 +1,31 @@
+Package: otop
+Version: 1.0.0
+Architecture: all
+Maintainer: Ahmed Sajidh <ahmedsajidh@gmail.com>
+Installed-Size: 216
+Depends: python3 (>= 3.8), python3-psutil, python3-yaml
+Recommends: python3-psycopg2
+Filename: pool/main/otop_1.0.0_all.deb
+Size: 31512
+MD5sum: 59bd81588fd51f2629a4ad7fc6870cbb
+SHA1: 18460f595dbd7fe4326b14f70573dea6a70a6bae
+SHA256: cd6d6d2d6a74ca133c6a7f79e9fb49b95c2a94aa5be01eb78e5416fc98e61c8b
+Section: admin
+Priority: optional
+Homepage: https://github.com/ahmedsajidh/otop
+Description: htop/btop for Odoo -- terminal monitor for Odoo servers
+ otop is a compact terminal monitor for servers running Odoo. It shows, side by
+ side for as many instances as are configured (LIVE, STAGING, ...):
+ .
+  * CPU, per-core load, RAM, swap, load average, disk I/O and network
+  * Odoo worker processes: pid, CPU, memory, uptime and busy/idle state
+  * total disk usage first, then PostgreSQL database, Odoo filestore and other
+  * PostgreSQL connections, active/idle/waiting backends, long queries
+ .
+ Worker busy/idle comes from observable evidence -- an established
+ connection on the Odoo HTTP port or an active database query -- not from
+ CPU usage, and anything approximated is labelled as such.
+ .
+ It runs as a single process with no daemon, no web server and no external
+ services, and reads its configuration from /etc/otop/config.yaml.
+

@@ -16,6 +16,8 @@ htmlcov/
 # debian build output
 packaging/build/
 *.deb
+# ...except the packages published in the apt repository
+!docs/pool/**/*.deb
 *.buildinfo
 *.changes
 debian/.debhelper/
