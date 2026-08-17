@@ -1,15 +1,15 @@
 Package: otop
-Version: 1.0.0
+Version: 1.0.1
 Architecture: all
 Maintainer: Ahmed Sajidh <ahmedsajidh@gmail.com>
 Installed-Size: 220
 Depends: python3 (>= 3.8), python3-psutil, python3-yaml
 Recommends: python3-psycopg2
-Filename: pool/main/otop_1.0.0_all.deb
-Size: 32304
-MD5sum: e5eee3633e92b241e6a19258ac99470e
-SHA1: 00047a27b53047138a9453484a71361240578408
-SHA256: c94355da8c4f3d780beb53235281299b7bcaefb04da44a1912b58a39738b4f2c
+Filename: pool/main/otop_1.0.1_all.deb
+Size: 33108
+MD5sum: c5e831f1ec21f3c2e53da042ffc6dd0b
+SHA1: c8112ad13cd44d9da064ef6d611b89c2d5435795
+SHA256: fb36f90bdcf1246bc4f575ac0ba17297339854cb4e9c0812564de1e20e0fb0c5
 Section: admin
 Priority: optional
 Homepage: https://github.com/ahmedsajidh/otop

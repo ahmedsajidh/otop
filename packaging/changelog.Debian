@@ -1,3 +1,15 @@
+otop (1.0.1) unstable; urgency=medium
+
+  * Apply Odoo's own defaults for workers (0) and max_cron_threads (2) when
+    odoo.conf omits them, instead of treating the worker counts as unknown and
+    leaving every child process untyped.
+  * Keep per-process CPU baselines and busy history across instances: with more
+    than one instance configured, each pass discarded the other instance's
+    state, so CPU% and BUSY% never had a previous sample to compare against.
+    Cached state is now dropped only when the process itself is gone.
+
+ -- Ahmed Sajidh <ahmedsajidh@gmail.com>  Tue, 18 Aug 2026 01:30:00 +0000
+
 otop (1.0.0) unstable; urgency=low
 
   * Initial release: terminal monitor for Odoo instances.

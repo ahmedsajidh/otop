@@ -173,10 +173,14 @@ def apply_odoo_conf(inst):
         inst.db_port = _int(options.get("db_port"), 5432)
     if inst.http_port is None:
         inst.http_port = _int(options.get("http_port"), 8069)
+    # Both keys are optional in odoo.conf; when they are absent Odoo uses these
+    # defaults, and so must we -- otherwise a perfectly normal odoo.conf that
+    # only sets `workers` leaves the worker counts unknown and every child
+    # process ends up untyped.
     if inst.workers is None:
-        inst.workers = _int(options.get("workers"), None)
+        inst.workers = _int(options.get("workers"), 0)
     if inst.max_cron_threads is None:
-        inst.max_cron_threads = _int(options.get("max_cron_threads"), None)
+        inst.max_cron_threads = _int(options.get("max_cron_threads"), 2)
     if inst.filestore is None and inst.database:
         data_dir = _clean(options.get("data_dir")) or os.path.expanduser(
             "~/.local/share/Odoo")

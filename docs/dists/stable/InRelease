@@ -5,29 +5,29 @@ Origin: otop
 Label: otop
 Suite: stable
 Codename: stable
-Version: 1.0.0
+Version: 1.0.1
 Architectures: all amd64 arm64
 Components: main
 Description: otop -- htop/btop for Odoo
-Date: Mon, 17 Aug 2026 22:35:41 +0000
+Date: Mon, 17 Aug 2026 22:59:57 +0000
 MD5Sum:
- 42c52aa7b8f958c1e5a1fe147d6034f5             1354 main/binary-all/Packages
- b0a9c133b339013bff5069a79fe0f08f              837 main/binary-all/Packages.gz
- 42c52aa7b8f958c1e5a1fe147d6034f5             1354 main/binary-amd64/Packages
- b0a9c133b339013bff5069a79fe0f08f              837 main/binary-amd64/Packages.gz
- 42c52aa7b8f958c1e5a1fe147d6034f5             1354 main/binary-arm64/Packages
- b0a9c133b339013bff5069a79fe0f08f              837 main/binary-arm64/Packages.gz
+ 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-all/Packages
+ 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-all/Packages.gz
+ 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-amd64/Packages
+ 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-amd64/Packages.gz
+ 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-arm64/Packages
+ 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-arm64/Packages.gz
 SHA256:
- 802ea7987864d97c8082d041c35a5d143f6bf0503b32017dd70740e0262cb9f1             1354 main/binary-all/Packages
- c7944c61414dfa5e5493ff91706673d7189061afaad8dc7ed207b29229afc1c7              837 main/binary-all/Packages.gz
- 802ea7987864d97c8082d041c35a5d143f6bf0503b32017dd70740e0262cb9f1             1354 main/binary-amd64/Packages
- c7944c61414dfa5e5493ff91706673d7189061afaad8dc7ed207b29229afc1c7              837 main/binary-amd64/Packages.gz
- 802ea7987864d97c8082d041c35a5d143f6bf0503b32017dd70740e0262cb9f1             1354 main/binary-arm64/Packages
- c7944c61414dfa5e5493ff91706673d7189061afaad8dc7ed207b29229afc1c7              837 main/binary-arm64/Packages.gz
+ 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-all/Packages
+ f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-all/Packages.gz
+ 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-amd64/Packages
+ f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-amd64/Packages.gz
+ 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-arm64/Packages
+ f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-arm64/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQRdXGqAGHq4zjNVNEVk1dnUvVjRCAUCaoOMvQAKCRBk1dnUvVjR
-CNJSAQCQqUSY5qcr+K1nEe2pqojWVZ5J+J0aKPODE/tfhiWaEwEAhAbRLHZRpjzw
-kxCRFKINrdsXPBLgWsfKbYFkf++w9gQ=
-=8nD3
+iHUEARYKAB0WIQRdXGqAGHq4zjNVNEVk1dnUvVjRCAUCaoOSbQAKCRBk1dnUvVjR
+CF8XAQCkVTqbTOkVOfdPzzMLtFBNhQtvECp16eL6kTvjIx/V6wD+OSqiCf+kqfEn
+IhUMngHboAcEJktnYAnsLVMCw9PbsA8=
+=3lIg
 -----END PGP SIGNATURE-----

@@ -122,3 +122,32 @@ class YamlDocumentTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OdooConfDefaultsTest(unittest.TestCase):
+    """Regression: an odoo.conf that omits max_cron_threads (very common) used
+    to leave the worker counts unknown, which disabled worker typing entirely.
+    Odoo's own defaults must be applied instead."""
+
+    def _config(self, body):
+        handle, path = tempfile.mkstemp(suffix=".conf")
+        with os.fdopen(handle, "w") as file_:
+            file_.write(body)
+        self.addCleanup(os.unlink, path)
+        return config_module.parse({"instances": {"live": {"odoo_conf": path}}})
+
+    def test_missing_max_cron_threads_defaults_to_two(self):
+        instance = self._config("[options]\ndb_name = odoo\nworkers = 5\n").instance("live")
+        self.assertEqual(instance.workers, 5)
+        self.assertEqual(instance.max_cron_threads, 2)
+
+    def test_missing_workers_defaults_to_zero(self):
+        instance = self._config("[options]\ndb_name = odoo\n").instance("live")
+        self.assertEqual(instance.workers, 0)
+        self.assertEqual(instance.max_cron_threads, 2)
+
+    def test_defaults_are_not_applied_when_odoo_conf_is_unreadable(self):
+        cfg = config_module.parse({"instances": {"live": {"odoo_conf": "/nope.conf"}}})
+        instance = cfg.instance("live")
+        self.assertIsNone(instance.workers)
+        self.assertIsNone(instance.max_cron_threads)

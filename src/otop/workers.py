@@ -266,6 +266,7 @@ class WorkerSampler:
         self.discovery_refresh = discovery_refresh
         self._cpu = {}                  # pid -> (cpu_ticks, timestamp)
         self._history = {}              # pid -> deque of 0/1
+        self._sweeps = 0
         self._table = {}
         self._table_time = 0.0
         self._masters = set()
@@ -409,8 +410,8 @@ class WorkerSampler:
         if not unknown:
             return
         if instance.workers is None or instance.max_cron_threads is None:
-            notes.append("worker types unknown: no odoo_conf, so the expected "
-                         "worker counts are not known")
+            notes.append("worker types unknown: the expected worker counts are "
+                         "not known (set workers/max_cron_threads, or odoo_conf)")
             return
         http_left = max(0, instance.workers - sum(1 for r in rows if r[2] == ROLE_HTTP))
         cron_left = max(0, instance.max_cron_threads
@@ -535,21 +536,31 @@ class WorkerSampler:
         return found
 
     def _update_history(self, result):
-        live = set()
         for proc in result["processes"]:
-            live.add(proc["pid"])
             if proc["status"] not in (BUSY, IDLE):
                 continue
             history = self._history.setdefault(proc["pid"], deque(maxlen=self.window))
             history.append(1 if proc["status"] == BUSY else 0)
             proc["busy_ratio"] = round(100.0 * sum(history) / len(history), 1)
             proc["window_samples"] = len(history)
-        for pid in list(self._history):
-            if pid not in live:
-                del self._history[pid]
-        for pid in list(self._cpu):
-            if pid not in live and pid != (result["master"] or {}).get("pid"):
-                del self._cpu[pid]
+        self._sweep()
+
+    def _sweep(self):
+        """Drop cached state for processes that no longer exist.
+
+        One sampler serves every configured instance, so entries must never be
+        pruned by "not seen in this instance's process list" -- with two
+        instances each pass would delete the other's CPU baselines and busy
+        history, and CPU% and BUSY% would be blank forever. Liveness is the only
+        correct criterion, and checking it occasionally is cheap.
+        """
+        self._sweeps += 1
+        if self._sweeps % 60:
+            return
+        for cache in (self._cpu, self._history):
+            for pid in list(cache):
+                if not os.path.isdir("%s/%d" % (PROC, pid)):
+                    del cache[pid]
 
     def _summarise(self, result):
         http = [p for p in result["processes"] if p["role"] == ROLE_HTTP]

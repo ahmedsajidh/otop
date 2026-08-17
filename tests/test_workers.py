@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from collections import deque
 
 from otop import workers
 from otop.config import Instance
@@ -196,3 +197,41 @@ class SampleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MultiInstanceStateTest(unittest.TestCase):
+    """Regression: one sampler serves every instance, so per-instance pruning
+    wiped the other instance's CPU baseline and busy history on every pass and
+    CPU%/BUSY% stayed blank whenever two instances were configured."""
+
+    def test_cpu_baseline_survives_another_instances_sample(self):
+        sampler = workers.WorkerSampler()
+        now = 1000.0
+        self.assertIsNone(sampler._cpu_percent(4242, 100, now))     # first sight
+        # a sample for a different instance, containing entirely different pids
+        sampler._update_history({"processes": [{"pid": 777, "status": "idle"}],
+                                 "master": {"pid": 776}})
+        self.assertEqual(sampler._cpu_percent(4242, 100 + workers.TICKS, now + 1),
+                         100.0)
+
+    def test_busy_history_survives_another_instances_sample(self):
+        sampler = workers.WorkerSampler()
+        first = {"pid": 10, "status": "busy"}
+        sampler._update_history({"processes": [first], "master": None})
+        sampler._update_history({"processes": [{"pid": 20, "status": "idle"}],
+                                 "master": None})
+        again = {"pid": 10, "status": "idle"}
+        sampler._update_history({"processes": [again], "master": None})
+        self.assertEqual(again["window_samples"], 2, "history was reset")
+        self.assertEqual(again["busy_ratio"], 50.0)
+
+    def test_dead_processes_are_eventually_swept(self):
+        sampler = workers.WorkerSampler()
+        sampler._cpu[999999] = (1, 1.0)
+        sampler._history[999999] = deque([1])
+        sampler._cpu[os.getpid()] = (1, 1.0)
+        for _ in range(60):
+            sampler._sweep()
+        self.assertNotIn(999999, sampler._cpu)
+        self.assertNotIn(999999, sampler._history)
+        self.assertIn(os.getpid(), sampler._cpu, "a live process must be kept")
