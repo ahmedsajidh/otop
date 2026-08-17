@@ -1,5 +1,5 @@
 Types: deb
-URIs: https://ahmedsajidh.github.io/otop
+URIs: https://raw.githubusercontent.com/ahmedsajidh/otop/main/docs
 Suites: stable
 Components: main
 Signed-By: /usr/share/keyrings/otop-archive-keyring.gpg

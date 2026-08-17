@@ -51,7 +51,7 @@ Once the apt repository is published (see *Publishing* below), every server is
 two commands away:
 
 ```bash
-curl -fsSL https://ahmedsajidh.github.io/otop/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ahmedsajidh/otop/main/docs/install.sh | sudo sh
 sudo apt install otop
 ```
 
@@ -60,9 +60,9 @@ installs the signing key and `/etc/apt/sources.list.d/otop.sources`; it is the
 same one-time step a PPA needs. To do it by hand instead:
 
 ```bash
-sudo curl -fsSL https://ahmedsajidh.github.io/otop/otop-archive-keyring.gpg \
+sudo curl -fsSL https://raw.githubusercontent.com/ahmedsajidh/otop/main/docs/otop-archive-keyring.gpg \
      -o /usr/share/keyrings/otop-archive-keyring.gpg
-sudo curl -fsSL https://ahmedsajidh.github.io/otop/otop.sources \
+sudo curl -fsSL https://raw.githubusercontent.com/ahmedsajidh/otop/main/docs/otop.sources \
      -o /etc/apt/sources.list.d/otop.sources
 sudo apt update && sudo apt install otop
 ```
@@ -341,9 +341,17 @@ static files — no reprepro, aptly or apt-utils needed, just `dpkg-dev` and
 git add docs && git commit -m "apt repository for otop 1.0.0" && git push
 ```
 
-Then, once, in **Settings → Pages → Deploy from a branch: `main` `/docs`**.
-After that `https://<user>.github.io/otop/` serves the repository, a landing
-page and `install.sh`, and servers can `apt install otop`.
+`docs/` is then served straight from the repository over
+`raw.githubusercontent.com`, which needs no Pages configuration at all — the
+URL is baked into the generated `otop.sources` and `install.sh`.
+
+GitHub Pages also works, *if* the account has no user-level custom domain: a
+custom domain on the `<user>.github.io` repository is applied to every project
+page, so `<user>.github.io/otop/` redirects to that domain, and unless it is
+served by Pages too the repository becomes unreachable. To use a domain you
+control, set it on **this** repository (Settings → Pages → Custom domain, e.g.
+`apt.example.com`, with a CNAME to `<user>.github.io`), then rebuild with
+`./packaging/apt-repo.sh --url https://apt.example.com`.
 
 For later versions, bump `__version__` in `src/otop/__init__.py`, add a
 `packaging/changelog.Debian` entry, then:
