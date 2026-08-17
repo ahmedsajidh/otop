@@ -1,0 +1,10 @@
+otop (1.0.0) unstable; urgency=low
+
+  * Initial release: terminal monitor for Odoo instances.
+    - server metrics: CPU (with per-core), RAM, swap, load, disk I/O, network
+    - Odoo worker table with evidence-based busy/idle and a rolling busy share
+    - storage: total disk first, then database, filestore and other
+    - PostgreSQL: connections, active/idle/waiting, long queries, sizes
+    - LIVE / STAGING switching, configuration in /etc/otop/config.yaml
+
+ -- Ahmed Sajidh <ahmedsajidh@gmail.com>  Tue, 18 Aug 2026 00:00:00 +0000

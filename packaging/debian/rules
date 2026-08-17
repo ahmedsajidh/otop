@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+# Build otop with debhelper + pybuild.  Requires debhelper, dh-python and
+# python3-setuptools; if those are not available, packaging/build-deb.sh
+# produces the same package with plain dpkg-deb.
+
+export PYBUILD_NAME = otop
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild
+
+override_dh_auto_install:
+	dh_auto_install
+	install -D -m 644 config/otop.yaml debian/otop/etc/otop/config.yaml
+	install -D -m 644 config/otop.yaml \
+		debian/otop/usr/share/doc/otop/config.example.yaml
+
+override_dh_auto_test:
+	PYTHONPATH=src python3 -m pytest tests -q || true

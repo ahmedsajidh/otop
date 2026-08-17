@@ -1,0 +1,99 @@
+.TH OTOP 1 "August 2026" "otop 1.0.0" "System Administration"
+.SH NAME
+otop \- htop/btop for Odoo: terminal monitor for Odoo workers, PostgreSQL and server resources
+.SH SYNOPSIS
+.B otop
+.RI [ options ]
+.SH DESCRIPTION
+.B otop
+is a compact, interactive terminal monitor for servers running Odoo. It shows
+server load, the Odoo worker processes of each configured instance, storage
+(total disk first, then database, filestore and other), PostgreSQL activity,
+disk I/O and network throughput.
+.PP
+Cheap metrics refresh every couple of seconds; expensive ones (filestore
+directory size, database size, table sizes) are cached and refreshed on much
+slower schedules. otop runs as a single process: no daemon, no web server, no
+external services.
+.SH OPTIONS
+.TP
+.BR \-c ", " \-\-config " " \fIPATH\fR
+Configuration file. Without it otop looks at
+.BR $OTOP_CONFIG ,
+.IR ~/.config/otop/config.yaml ", then " /etc/otop/config.yaml .
+.TP
+.BR \-i ", " \-\-instance " " \fIKEY\fR
+Instance to display first. Defaults to the first configured instance.
+.TP
+.BR \-n ", " \-\-interval " " \fISECONDS\fR
+Refresh interval for cheap metrics.
+.TP
+.BR \-1 ", " \-\-once
+Print one snapshot as plain text and exit. Useful over SSH, in scripts and in
+cron.
+.TP
+.B \-\-width \fICOLUMNS\fR
+Line width for \fB\-\-once\fR. Defaults to the terminal width.
+.TP
+.BR \-V ", " \-\-version
+Print the version and exit.
+.SH KEYS
+.TP
+.B q
+Quit.
+.TP
+.B r
+Refresh now, including the cached filestore and database sizes.
+.TP
+.BR l ", " s
+Switch to the LIVE or STAGING instance. Any instance can also be selected by
+its position with the number keys, or cycled with \fBTab\fR.
+.TP
+.B p
+Pause and resume sampling.
+.TP
+.B ?
+Help, including the meaning of every status marker.
+.SH WORKER STATUS
+A worker is reported
+.B BUSY
+when it owns an established connection on the Odoo HTTP port, or when it has an
+active PostgreSQL query. That is an observation, not an inference from CPU use.
+Values that could only be approximated are prefixed with
+.BR ~ .
+.PP
+Because sampling happens every couple of seconds, a worker serving very short
+requests is often caught idle. The
+.B BUSY%
+column and the
+.B AVG
+counter give the share of recent samples in which each worker was busy; use
+them, not the instantaneous count, to judge saturation.
+.B QUEUED
+is the kernel's accept queue on the HTTP port: connections that no worker has
+picked up yet.
+.PP
+Reading a worker's sockets requires running as root or as the Odoo user;
+otherwise otop falls back to a CPU-based approximation and says so.
+.SH FILES
+.TP
+.I /etc/otop/config.yaml
+Configuration: one entry per Odoo instance, each usually just pointing at that
+instance's own odoo.conf.
+.TP
+.I /usr/share/doc/otop/config.example.yaml
+Documented example configuration.
+.SH EXIT STATUS
+.TP
+.B 0
+Normal exit.
+.TP
+.B 2
+Configuration error, unknown instance, or no terminal (use \fB\-\-once\fR).
+.SH SEE ALSO
+.BR htop (1),
+.BR atop (1),
+.BR iotop (8),
+.BR top (1)
+.SH AUTHOR
+Ahmed Sajidh

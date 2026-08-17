@@ -1,0 +1,56 @@
+# otop configuration -- /etc/otop/config.yaml
+#
+# Point each instance at its own odoo.conf and otop reads the database name,
+# filestore path, HTTP port, worker counts and database credentials from there,
+# so nothing is duplicated and no path or credential is baked into otop.
+# Any value below overrides what odoo.conf says.
+
+# Seconds between samples. Cheap metrics only; the expensive ones are cached.
+refresh:
+  fast: 2          # CPU, RAM, workers, disk I/O, network, pg_stat_activity
+  slow: 30         # database size
+  filestore: 300   # filestore directory walk (raise it for huge filestores)
+  tables: 900      # largest tables / index sizes
+  discovery: 10    # full process-table rescan
+
+# Filesystem reported as total server storage.
+disk_path: /
+
+# Optional: PostgreSQL data directory. Only used to check whether the database
+# lives on disk_path; if it does not, it is excluded from the "Other" figure.
+# pg_data_dir: /var/lib/postgresql/16/main
+
+# A query counts as long running after this many seconds.
+long_query_seconds: 5
+
+# Show a truncated, single-line version of long-running queries.
+# Set to false if query text on this database is sensitive.
+show_query_text: true
+
+# Only used when otop cannot read /proc/<pid>/fd (not root, not the Odoo user):
+# CPU % above which a worker is *approximated* as busy. Such values are marked ~.
+busy_cpu_threshold: 20
+
+instances:
+  live:
+    name: LIVE
+    odoo_conf: /etc/odoo/odoo-live.conf
+    # Everything below is optional -- it is read from odoo_conf otherwise.
+    # database: odoo_live
+    # filestore: /var/lib/odoo/live/filestore/odoo_live
+    # http_port: 8069
+    # workers: 8
+    # max_cron_threads: 2
+    # Substring matched against process command lines to find the Odoo master.
+    # Defaults to the odoo_conf path above.
+    # process_match: /etc/odoo/odoo-live.conf
+    # db:
+    #   host: localhost
+    #   port: 5432
+    #   user: odoo
+    #   password: ""
+
+  staging:
+    name: STAGING
+    odoo_conf: /etc/odoo/odoo-staging.conf
+    # enabled: false     # keep the entry but skip it

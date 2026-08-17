@@ -1,0 +1,34 @@
+# development virtualenv -- never committed
+.venv/
+venv/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# debian build output
+packaging/build/
+*.deb
+*.buildinfo
+*.changes
+debian/.debhelper/
+debian/otop/
+debian/files
+debian/*.substvars
+debian/debhelper-build-stamp
+
+# editors / os
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# local configuration (never commit real hosts or credentials)
+config.local.yaml
