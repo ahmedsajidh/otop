@@ -45,7 +45,29 @@ quit refresh live staging tab next pause ? help                        sample 0.
 
 ## Installing
 
-### Debian / Ubuntu package (recommended)
+### apt (recommended for servers)
+
+Once the apt repository is published (see *Publishing* below), every server is
+two commands away:
+
+```bash
+curl -fsSL https://ahmedsajidh.github.io/otop/install.sh | sudo sh
+sudo apt install otop
+```
+
+and from then on `sudo apt upgrade` keeps it current. The first command only
+installs the signing key and `/etc/apt/sources.list.d/otop.sources`; it is the
+same one-time step a PPA needs. To do it by hand instead:
+
+```bash
+sudo curl -fsSL https://ahmedsajidh.github.io/otop/otop-archive-keyring.gpg \
+     -o /usr/share/keyrings/otop-archive-keyring.gpg
+sudo curl -fsSL https://ahmedsajidh.github.io/otop/otop.sources \
+     -o /etc/apt/sources.list.d/otop.sources
+sudo apt update && sudo apt install otop
+```
+
+### Debian / Ubuntu package file
 
 ```bash
 ./packaging/build-deb.sh              # produces otop_1.0.0_all.deb
@@ -306,6 +328,48 @@ otop keeps running and shows `N/A` or a short reason when:
 
 ---
 
+## Publishing the apt repository
+
+`packaging/apt-repo.sh` turns the built `.deb` into a signed APT repository of
+static files — no reprepro, aptly or apt-utils needed, just `dpkg-dev` and
+`gpg`. It writes to `docs/`, which GitHub Pages serves directly.
+
+```bash
+./packaging/build-deb.sh                     # 1. build the package
+./packaging/apt-repo.sh --generate-key       # 2. first time only: create the
+                                             #    signing key, then build docs/
+git add docs && git commit -m "apt repository for otop 1.0.0" && git push
+```
+
+Then, once, in **Settings → Pages → Deploy from a branch: `main` `/docs`**.
+After that `https://<user>.github.io/otop/` serves the repository, a landing
+page and `install.sh`, and servers can `apt install otop`.
+
+For later versions, bump `__version__` in `src/otop/__init__.py`, add a
+`packaging/changelog.Debian` entry, then:
+
+```bash
+./packaging/build-deb.sh && ./packaging/apt-repo.sh
+git add docs && git commit -m "otop X.Y.Z" && git push
+```
+
+Servers pick it up with `sudo apt update && sudo apt upgrade`.
+
+Useful flags: `--sign <KEYID>` to use an existing key, `--url` / `--output` to
+publish somewhere other than GitHub Pages (any nginx or S3 path works), and
+`--unsigned` to skip GPG entirely — that emits a `Trusted: yes` source, which
+means apt will **not** verify the repository's integrity, so only use it inside
+a network you already trust.
+
+Only one build per package version is published; if both the `all` and `amd64`
+`.deb` are present the portable `all` one wins, so `apt-cache policy` stays
+clean.
+
+This path is verified end to end: a real `apt` run against a generated
+repository fetches and validates `InRelease`, resolves `apt-cache policy otop`
+to the published version, downloads the package — and rejects a tampered
+`.deb`, a tampered index, and a repository signed by an untrusted key.
+
 ## Development
 
 ```bash
@@ -335,6 +399,7 @@ otop/
 ├── tests/
 ├── packaging/
 │   ├── build-deb.sh   dpkg-deb build (no debhelper needed) -- the tested path
+│   ├── apt-repo.sh    builds the signed apt repository into docs/
 │   ├── control.in, copyright, changelog.Debian, otop.1
 │   └── debian/        dpkg-buildpackage/debhelper recipe (needs debhelper, dh-python)
 ├── config/otop.yaml
