@@ -47,7 +47,6 @@ quit refresh live staging tab next pause ? help                        sample 0.
 
 ### apt (recommended for servers)
 
-Once the apt repository is published (see *Publishing* below), every server is
 two commands away:
 
 ```bash
@@ -328,11 +327,7 @@ otop keeps running and shows `N/A` or a short reason when:
 
 ---
 
-## Publishing the apt repository
 
-`packaging/apt-repo.sh` turns the built `.deb` into a signed APT repository of
-static files — no reprepro, aptly or apt-utils needed, just `dpkg-dev` and
-`gpg`. It writes to `docs/`, which GitHub Pages serves directly.
 
 ```bash
 ./packaging/build-deb.sh                     # 1. build the package
@@ -345,38 +340,14 @@ git add docs && git commit -m "apt repository for otop 1.0.0" && git push
 `raw.githubusercontent.com`, which needs no Pages configuration at all — the
 URL is baked into the generated `otop.sources` and `install.sh`.
 
-GitHub Pages also works, *if* the account has no user-level custom domain: a
-custom domain on the `<user>.github.io` repository is applied to every project
-page, so `<user>.github.io/otop/` redirects to that domain, and unless it is
-served by Pages too the repository becomes unreachable. To use a domain you
-control, set it on **this** repository (Settings → Pages → Custom domain, e.g.
-`apt.example.com`, with a CNAME to `<user>.github.io`), then rebuild with
-`./packaging/apt-repo.sh --url https://apt.example.com`.
 
 For later versions, bump `__version__` in `src/otop/__init__.py`, add a
 `packaging/changelog.Debian` entry, then:
 
-```bash
-./packaging/build-deb.sh && ./packaging/apt-repo.sh
-git add docs && git commit -m "otop X.Y.Z" && git push
-```
 
 Servers pick it up with `sudo apt update && sudo apt upgrade`.
 
-Useful flags: `--sign <KEYID>` to use an existing key, `--url` / `--output` to
-publish somewhere other than GitHub Pages (any nginx or S3 path works), and
-`--unsigned` to skip GPG entirely — that emits a `Trusted: yes` source, which
-means apt will **not** verify the repository's integrity, so only use it inside
-a network you already trust.
 
-Only one build per package version is published; if both the `all` and `amd64`
-`.deb` are present the portable `all` one wins, so `apt-cache policy` stays
-clean.
-
-This path is verified end to end: a real `apt` run against a generated
-repository fetches and validates `InRelease`, resolves `apt-cache policy otop`
-to the published version, downloads the package — and rejects a tampered
-`.deb`, a tampered index, and a repository signed by an untrusted key.
 
 ## Development
 
