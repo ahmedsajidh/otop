@@ -406,13 +406,6 @@ otop/
 └── pyproject.toml
 ```
 
-## Name
-
-There is no `otop` command, Debian/Ubuntu package or PyPI project with this
-name (checked against the Debian package search, PyPI and the local apt/dpkg
-databases in August 2026). The closest neighbours are `atop`, `htop` and
-`iotop`.
-
 ## Licence
 
 MIT — see `LICENSE`.
