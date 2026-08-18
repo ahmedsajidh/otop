@@ -56,6 +56,7 @@ quit refresh live staging tab next pause t sort ? help                 sample 0.
 
 ### apt (recommended for servers)
 
+Once the apt repository is published (see *Publishing* below), every server is
 two commands away:
 
 ```bash
@@ -415,7 +416,11 @@ otop keeps running and shows `N/A` or a short reason when:
 
 ---
 
+## Publishing the apt repository
 
+`packaging/apt-repo.sh` turns the built `.deb` into a signed APT repository of
+static files — no reprepro, aptly or apt-utils needed, just `dpkg-dev` and
+`gpg`. It writes to `docs/`, which GitHub Pages serves directly.
 
 ```bash
 ./packaging/build-deb.sh                     # 1. build the package
@@ -428,14 +433,25 @@ git add docs && git commit -m "apt repository for otop 1.1.0" && git push
 `raw.githubusercontent.com`, which needs no Pages configuration at all — the
 URL is baked into the generated `otop.sources` and `install.sh`.
 
+GitHub Pages also works, *if* the account has no user-level custom domain: a
+custom domain on the `<user>.github.io` repository is applied to every project
+page, so `<user>.github.io/otop/` redirects to that domain, and unless it is
+served by Pages too the repository becomes unreachable. To use a domain you
+control, set it on **this** repository (Settings → Pages → Custom domain, e.g.
+`apt.example.com`, with a CNAME to `<user>.github.io`), then rebuild with
+`./packaging/apt-repo.sh --url https://apt.example.com`.
 
 For later versions, bump `__version__` in `src/otop/__init__.py`, add a
 `packaging/changelog.Debian` entry, then:
 
+```bash
+./packaging/build-deb.sh && ./packaging/apt-repo.sh
+git add docs && git commit -m "otop X.Y.Z" && git push
+```
 
 Servers pick it up with `sudo apt update && sudo apt upgrade`.
 
-
+---
 
 ## Development
 

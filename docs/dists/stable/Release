@@ -2,22 +2,22 @@ Origin: otop
 Label: otop
 Suite: stable
 Codename: stable
-Version: 1.0.1
+Version: 1.1.0
 Architectures: all amd64 arm64
 Components: main
 Description: otop -- htop/btop for Odoo
-Date: Mon, 17 Aug 2026 22:59:57 +0000
+Date: Tue, 18 Aug 2026 07:00:20 +0000
 MD5Sum:
- 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-all/Packages
- 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-all/Packages.gz
- 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-amd64/Packages
- 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-amd64/Packages.gz
- 84398e5f41af68c0caab30c8433a63c7             1354 main/binary-arm64/Packages
- 57b1487f2a212e8faa66bc56d13f3b78              836 main/binary-arm64/Packages.gz
+ aee6cb5276383a821474e910415d3f6c             2708 main/binary-all/Packages
+ 7e32379fc481d63b19dfdc01e49c983b              980 main/binary-all/Packages.gz
+ aee6cb5276383a821474e910415d3f6c             2708 main/binary-amd64/Packages
+ 7e32379fc481d63b19dfdc01e49c983b              980 main/binary-amd64/Packages.gz
+ aee6cb5276383a821474e910415d3f6c             2708 main/binary-arm64/Packages
+ 7e32379fc481d63b19dfdc01e49c983b              980 main/binary-arm64/Packages.gz
 SHA256:
- 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-all/Packages
- f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-all/Packages.gz
- 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-amd64/Packages
- f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-amd64/Packages.gz
- 8d736549b067700e918199cf8977474c6292915b8c2405ded153a5c6ab6db751             1354 main/binary-arm64/Packages
- f55563e01adb7aa3d15cf63f60ca134e93e846bdae4e96aa6bb5a338e8713a1c              836 main/binary-arm64/Packages.gz
+ d6af0903d726dc857aff6efcfb5ada0a1446d4651dbc40c1036b3ba237d808d9             2708 main/binary-all/Packages
+ 6e44aa4f53e87c55ea9ad218662316195916a6c131288bbbadce9753ed0052fc              980 main/binary-all/Packages.gz
+ d6af0903d726dc857aff6efcfb5ada0a1446d4651dbc40c1036b3ba237d808d9             2708 main/binary-amd64/Packages
+ 6e44aa4f53e87c55ea9ad218662316195916a6c131288bbbadce9753ed0052fc              980 main/binary-amd64/Packages.gz
+ d6af0903d726dc857aff6efcfb5ada0a1446d4651dbc40c1036b3ba237d808d9             2708 main/binary-arm64/Packages
+ 6e44aa4f53e87c55ea9ad218662316195916a6c131288bbbadce9753ed0052fc              980 main/binary-arm64/Packages.gz
