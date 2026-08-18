@@ -39,6 +39,9 @@ DEFAULTS = {
     "long_query_seconds": 5.0,
     "busy_cpu_threshold": 20.0,
     "show_query_text": True,
+    "routes": True,             # tail the Odoo access log for per-route timings
+    "routes_window": 900.0,     # rolling window for the route statistics
+    "routes_max_events": 20000, # hard cap on remembered requests, per instance
 }
 
 FALSY_ODOO = {"", "false", "none", "0"}
@@ -60,6 +63,7 @@ class Instance:
         "filestore",
         "http_port",
         "key",
+        "logfile",
         "max_cron_threads",
         "name",
         "odoo_conf",
@@ -76,6 +80,7 @@ class Instance:
         self.database = None
         self.filestore = None
         self.http_port = None
+        self.logfile = None
         self.workers = None
         self.max_cron_threads = None
         self.db_host = None
@@ -181,6 +186,14 @@ def apply_odoo_conf(inst):
         inst.workers = _int(options.get("workers"), 0)
     if inst.max_cron_threads is None:
         inst.max_cron_threads = _int(options.get("max_cron_threads"), 2)
+    if inst.logfile is None:
+        logfile = _clean(options.get("logfile"))
+        if logfile:
+            # A relative logfile is relative to Odoo's working directory, which
+            # the file alone does not reveal; the instance directory is the
+            # usual answer, and the running command line settles it later on.
+            inst.logfile = logfile if os.path.isabs(logfile) else os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(inst.odoo_conf)), logfile))
     if inst.filestore is None and inst.database:
         data_dir = _clean(options.get("data_dir")) or os.path.expanduser(
             "~/.local/share/Odoo")
@@ -219,14 +232,20 @@ def parse(document, path=None):
         cfg.refresh = _float(refresh, cfg.refresh)
 
     for key in ("slow_refresh", "filestore_refresh", "table_refresh",
-                "discovery_refresh", "long_query_seconds", "busy_cpu_threshold"):
+                "discovery_refresh", "long_query_seconds", "busy_cpu_threshold",
+                "routes_window"):
         if key in document:
             setattr(cfg, key, _float(document[key], getattr(cfg, key)))
+    if "routes_max_events" in document:
+        cfg.routes_max_events = _int(document["routes_max_events"],
+                                     cfg.routes_max_events)
     for key in ("disk_path", "pg_data_dir"):
         if document.get(key):
             setattr(cfg, key, str(document[key]))
     if "show_query_text" in document:
         cfg.show_query_text = bool(document["show_query_text"])
+    if "routes" in document:
+        cfg.routes = bool(document["routes"])
 
     instances = document.get("instances")
     if isinstance(instances, dict):
@@ -248,6 +267,7 @@ def parse(document, path=None):
         inst.process_match = values.get("process_match") or None
         inst.database = values.get("database") or None
         inst.filestore = values.get("filestore") or None
+        inst.logfile = values.get("logfile") or None
         inst.http_port = _int(values.get("http_port"), None)
         inst.workers = _int(values.get("workers"), None)
         inst.max_cron_threads = _int(values.get("max_cron_threads"), None)

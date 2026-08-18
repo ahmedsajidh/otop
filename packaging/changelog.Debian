@@ -1,3 +1,22 @@
+otop (1.1.0) unstable; urgency=low
+
+  * New ROUTES panel: per-route request timings read from each instance's own
+    Odoo log file, which records the SQL query count, the SQL time and the
+    Python time of every finished request. RPC calls are grouped by
+    model.method, other requests by URL with ids and asset hashes folded.
+    Shows calls, average, p95, maximum, queries per request and the share of
+    time spent in the database; 't' re-sorts by total time, slowest, average
+    or calls.
+  * The log file is found in odoo.conf or on the running master's --logfile,
+    resolved against that process's working directory, so a typical systemd
+    unit needs no extra configuration. New settings: routes, routes_window,
+    routes_max_events, and a per-instance logfile.
+  * Tailing is incremental and survives both logrotate styles (new inode and
+    copytruncate). Requests killed by limit_time_real never reach the log; that
+    limitation is documented rather than papered over.
+
+ -- Ahmed Sajidh <ahmedsajidh@gmail.com>  Tue, 18 Aug 2026 10:00:00 +0000
+
 otop (1.0.1) unstable; urgency=medium
 
   * Apply Odoo's own defaults for workers (0) and max_cron_threads (2) when

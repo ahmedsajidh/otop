@@ -15,11 +15,13 @@ from .format import (
     fit,
     human_bytes,
     human_count,
+    human_duration,
     human_percent,
     human_rate,
     human_seconds,
     level,
 )
+from .routes import SORT_LABELS
 
 INTENSITY = " .:-=+*#%@"
 
@@ -332,6 +334,84 @@ def postgres_block(state, width, max_queries=3, max_tables=3):
     return lines
 
 
+def _duration_style(seconds, warn=1.0, crit=5.0):
+    if seconds is None:
+        return "dim"
+    if seconds >= crit:
+        return "crit"
+    if seconds >= warn:
+        return "warn"
+    return "normal"
+
+
+def routes_block(state, width, max_rows=6):
+    """Slowest / heaviest routes, from the Odoo access log."""
+    stats = (state or {}).get("routes")
+    if not stats:
+        return []
+
+    title = [("ROUTES", "title")]
+    if stats.get("available"):
+        title.append(("  last " + human_seconds(stats.get("window")), "dim"))
+        title.append(("  " + human_count(stats.get("requests")) + " req", "normal"))
+        if stats.get("rps"):
+            title.append((" %.1f/s" % stats["rps"], "dim"))
+        if stats.get("errors"):
+            title.append(("  %d err" % stats["errors"], "warn"))
+        title.append(("  by " + SORT_LABELS.get(stats.get("sort"), "total time"),
+                      "label"))
+    lines = [_truncate(title, width)]
+
+    if not stats.get("available"):
+        reason = stats.get("error") or "unavailable"
+        detail = "  " + reason
+        if reason == "no log file":
+            detail = "  no access log: this instance has no --logfile"
+        lines.append(_truncate([(detail, "warn")], width))
+        return lines
+
+    rows = stats.get("rows") or []
+    if not rows:
+        lines.append(_truncate(
+            [("  " + (stats.get("note") or "no requests in the window"), "dim")],
+            width))
+        return lines
+
+    wide = width >= 92
+    medium = width >= 74
+    head = "  %6s %8s" % ("CALLS", "AVG")
+    if medium:
+        head += " %8s" % "P95"
+    head += " %8s" % "MAX"
+    if wide:
+        head += " %7s %5s" % ("SQL/req", "SQL%")
+    head += "  ROUTE"
+    lines.append([(fit(head, width), "label")])
+
+    for row in rows[:max_rows]:
+        line = [("  %6s " % human_count(row["calls"]), "normal"),
+                ("%8s" % human_duration(row["avg"]), _duration_style(row["avg"]))]
+        if medium:
+            line.append((" %8s" % human_duration(row["p95"]),
+                         _duration_style(row["p95"])))
+        line.append((" %8s" % human_duration(row["max"]),
+                     _duration_style(row["max"])))
+        if wide:
+            line.append((" %7.0f" % row["queries"], "dim"))
+            line.append((" %5s" % human_percent(row.get("sql_share")), "dim"))
+        label = row["route"]
+        if row.get("errors"):
+            label += "  (%d err)" % row["errors"]
+        line.append(("  " + label, "normal"))
+        lines.append(_truncate(line, width))
+
+    hidden = stats.get("distinct", 0) - len(rows[:max_rows])
+    if hidden > 0:
+        lines.append(_truncate(
+            [("  ... %d more route(s)" % hidden, "dim")], width))
+    return lines
+
+
 def io_block(snapshot, width):
     system = snapshot.get("system") or {}
     disk_io = system.get("disk_io") or {}
@@ -371,7 +451,7 @@ def footer(snapshot, width, paused=False):
     keys = [("q", "key"), ("uit ", "dim"), ("r", "key"), ("efresh ", "dim"),
             ("l", "key"), ("ive ", "dim"), ("s", "key"), ("taging ", "dim"),
             ("tab", "key"), (" next ", "dim"), ("p", "key"), ("ause ", "dim"),
-            ("?", "key"), (" help", "dim")]
+            ("t", "key"), (" sort ", "dim"), ("?", "key"), (" help", "dim")]
     right = "sample %s ago" % human_seconds(age, na="-")
     if paused:
         right = "PAUSED  " + right
@@ -393,7 +473,23 @@ HELP_TEXT = [
     ("  1..9         switch to instance by position", "normal"),
     ("  tab          next instance", "normal"),
     ("  p            pause / resume sampling", "normal"),
+    ("  t            sort ROUTES by total time / slowest / average / calls",
+     "normal"),
     ("  ?            close this help", "normal"),
+    ("", "normal"),
+    ("ROUTES", "label"),
+    ("  Read from the instance's own access log, which Odoo writes with the",
+     "normal"),
+    ("  SQL time and the Python time of every finished request.  RPC calls are",
+     "normal"),
+    ("  grouped by model.method, other requests by URL with ids folded to '*'.",
+     "normal"),
+    ("  AVG/P95/MAX are per request; SQL% is the share of the time spent in the",
+     "normal"),
+    ("  database.  Requests killed by limit_time_real never reach the log, so a",
+     "normal"),
+    ("  timing-out route can be missing here -- watch QUEUED as well.", "normal"),
+    ("  Needs --logfile (or logfile=) and the default INFO log level.", "normal"),
     ("", "normal"),
     ("WORKER STATUS", "label"),
     ("  * BUSY       the worker owns an established connection on the Odoo HTTP",
@@ -445,12 +541,17 @@ def build(snapshot, config, active, width, height, version="", paused=False,
     state = (snapshot.get("instances") or {}).get(active) or {}
     budget = height - len(top) - len(bottom)
 
-    max_workers, max_queries, max_tables, max_storage = 12, 3, 3, 8
-    for _attempt in range(12):
+    max_workers, max_queries, max_tables, max_storage, max_routes = 12, 3, 3, 8, 6
+    for _attempt in range(20):
         body = []
         body.extend(system_block(snapshot, width))
         body.append([])
         body.extend(workers_block(state, width, max_workers))
+        if max_routes:
+            routes = routes_block(state, width, max_routes)
+            if routes:
+                body.append([])
+                body.extend(routes)
         body.append([])
         body.extend(storage_block(snapshot, width, max_storage))
         body.append([])
@@ -463,14 +564,20 @@ def build(snapshot, config, active, width, height, version="", paused=False,
         body.extend(io_block(snapshot, width))
         if len(body) <= budget:
             break
-        if max_workers > 3:
+        if max_workers > 6:
             max_workers -= 2
+        elif max_routes > 3:
+            max_routes -= 1
         elif max_tables:
             max_tables -= 1
         elif max_queries:
             max_queries -= 1
         elif max_storage > 3:
             max_storage -= 1
+        elif max_workers > 3:
+            max_workers -= 1
+        elif max_routes:
+            max_routes -= 1
         else:
             body = body[:budget]
             break

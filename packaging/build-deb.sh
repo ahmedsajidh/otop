@@ -3,10 +3,10 @@
 # build system, no network. otop is pure Python, so "building" is really just
 # laying the files out in the right places.
 #
-#   ./packaging/build-deb.sh                # -> otop_1.0.0_all.deb
-#   ./packaging/build-deb.sh --arch amd64   # -> otop_1.0.0_amd64.deb
+#   ./packaging/build-deb.sh                # -> otop_1.1.0_all.deb
+#   ./packaging/build-deb.sh --arch amd64   # -> otop_1.1.0_amd64.deb
 #
-# Install with:  sudo apt install ./otop_1.0.0_all.deb
+# Install with:  sudo apt install ./otop_1.1.0_all.deb
 
 set -eu
 

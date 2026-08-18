@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "otop"
-version = "1.0.0"
+version = "1.1.0"
 description = "htop/btop for Odoo -- a terminal monitor for Odoo workers, PostgreSQL and server resources"
 readme = "README.md"
 license = { text = "MIT" }

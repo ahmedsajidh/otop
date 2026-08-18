@@ -31,6 +31,14 @@ show_query_text: true
 # CPU % above which a worker is *approximated* as busy. Such values are marked ~.
 busy_cpu_threshold: 20
 
+# ROUTES panel: per-route request timings, tailed from each instance's own Odoo
+# log file. Needs Odoo to write a log file (--logfile / logfile =) at the
+# default INFO level; otop finds the path in odoo.conf or on the running
+# master's command line. Set to false to switch the panel off.
+routes: true
+routes_window: 900         # rolling window for the statistics, seconds
+routes_max_events: 20000   # cap on remembered requests, per instance
+
 instances:
   live:
     name: LIVE
@@ -44,6 +52,9 @@ instances:
     # Substring matched against process command lines to find the Odoo master.
     # Defaults to the odoo_conf path above.
     # process_match: /etc/odoo/odoo-live.conf
+    # Access log for the ROUTES panel. Read from odoo.conf, or from the running
+    # master's --logfile, unless set here.
+    # logfile: /var/log/odoo/odoo-live.log
     # db:
     #   host: localhost
     #   port: 5432

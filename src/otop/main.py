@@ -14,7 +14,7 @@ import sys
 import threading
 import time
 
-from . import __version__, storage, ui
+from . import __version__, routes, storage, ui
 from . import config as config_module
 from .postgres import PostgresClient
 from .system import SystemSampler
@@ -43,10 +43,14 @@ class Collector(threading.Thread):
         )
         self._postgres = {}
         self._filestores = {}
+        self._routes = {}
         self._sizes = {}
         self._size_time = {}
         self._relation_time = {}
+        self.route_sort = routes.SORTS[0]
         for instance in config.instances:
+            self._routes[instance.key] = routes.RouteWatcher(
+                instance, config.routes_window, config.routes_max_events)
             self._postgres[instance.key] = PostgresClient(
                 instance, config.long_query_seconds, config.show_query_text)
             self._filestores[instance.key] = storage.DirectorySize(
@@ -74,6 +78,12 @@ class Collector(threading.Thread):
         for cache in self._filestores.values():
             cache.refresh(force=True)
         self._wake.set()
+
+    def cycle_routes(self):
+        """'t' key: sort the route table by the next criterion."""
+        self.route_sort = routes.next_sort(self.route_sort)
+        self._wake.set()
+        return self.route_sort
 
     def toggle_pause(self):
         self.paused = not self.paused
@@ -151,6 +161,15 @@ class Collector(threading.Thread):
         cache = self._filestores[instance.key]
         cache.refresh()
 
+        route_stats = None
+        if self.config.routes:
+            master = (workers.get("master") or {}) if isinstance(workers, dict) else {}
+            children = [process.get("pid") for process in (workers.get("processes") or [])
+                        if process.get("pid")]
+            route_stats = self._routes[instance.key].sample(
+                self.route_sort, limit=12, master_pid=master.get("pid"),
+                worker_pids=children[:4])
+
         return {
             "key": instance.key,
             "name": instance.name,
@@ -161,6 +180,7 @@ class Collector(threading.Thread):
             "postgres": activity,
             "sizes": dict(sizes),
             "filestore": cache.snapshot(),
+            "routes": route_stats,
         }
 
 
@@ -226,6 +246,9 @@ def run_curses(stdscr, config, collector, active, refresh_ms=250):
             continue
         if pressed in ("p", "P"):
             collector.toggle_pause()
+            continue
+        if pressed in ("t", "T"):
+            collector.cycle_routes()
             continue
         chosen = _select(config, active, pressed.lower())
         if chosen:

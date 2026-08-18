@@ -53,6 +53,22 @@ SNAPSHOT = {
                 {"name": "mail_message", "total": 100, "indexes": 20, "heap": 80}]},
             "filestore": {"path": "/srv/fs", "bytes": 100, "files": 5, "age": 30.0,
                           "scanning": False, "error": None},
+            "routes": {
+                "available": True, "error": None, "note": None, "sort": "total",
+                "window": 900.0, "requests": 120, "distinct": 4, "errors": 1,
+                "rps": 0.13, "total_time": 176.4, "span": 900.0,
+                "newest": 1000.0, "untimed": 0, "dropped": 0,
+                "path": "/var/odoo/live/logs/odoo-server.log",
+                "rows": [
+                    {"route": "pos.session.load_data", "calls": 3, "total": 175.0,
+                     "avg": 58.4, "p95": 59.2, "max": 59.244, "sql": 126.0,
+                     "sql_share": 72.0, "queries": 412.0, "errors": 0},
+                    {"route": "GET /web/assets/*/web.assets_backend.min.js",
+                     "calls": 40, "total": 1.4, "avg": 0.034, "p95": 0.09,
+                     "max": 0.3, "sql": 0.7, "sql_share": 50.0, "queries": 7.0,
+                     "errors": 1},
+                ],
+            },
         },
     },
 }
@@ -113,6 +129,54 @@ class LayoutTest(unittest.TestCase):
 
     def test_paused_marker(self):
         self.assertIn("PAUSED", render(paused=True))
+
+
+class RoutesPanelTest(unittest.TestCase):
+    def test_routes_are_shown_with_their_timings(self):
+        text = render()
+        self.assertIn("ROUTES", text)
+        self.assertIn("pos.session.load_data", text)
+        self.assertIn("59.2s", text)                    # MAX, sub-minute
+        self.assertIn("34ms", text)                     # AVG, sub-second
+        self.assertIn("by total time", text)
+        self.assertIn("1 err", text)
+
+    def test_narrow_terminal_drops_the_optional_columns(self):
+        wide = render(width=120)
+        self.assertIn("SQL%", wide)
+        narrow = render(width=70)
+        self.assertNotIn("SQL%", narrow)
+        self.assertIn("pos.session.load_data", narrow)
+
+    def test_missing_logfile_is_explained_not_hidden(self):
+        snapshot = dict(SNAPSHOT)
+        instance = dict(SNAPSHOT["instances"]["live"])
+        instance["routes"] = {"available": False, "error": "no log file",
+                              "rows": [], "distinct": 0, "requests": 0}
+        snapshot["instances"] = {"live": instance}
+        text = ui.to_text(ui.build(snapshot, CONFIG, "live", 100, 40, version="1.0"))
+        self.assertIn("ROUTES", text)
+        self.assertIn("--logfile", text)
+
+    def test_no_route_data_means_no_panel(self):
+        snapshot = dict(SNAPSHOT)
+        instance = dict(SNAPSHOT["instances"]["live"])
+        instance["routes"] = None
+        snapshot["instances"] = {"live": instance}
+        text = ui.to_text(ui.build(snapshot, CONFIG, "live", 100, 40, version="1.0"))
+        self.assertNotIn("ROUTES", text)
+
+    def test_a_very_long_route_is_clipped(self):
+        snapshot = dict(SNAPSHOT)
+        instance = dict(SNAPSHOT["instances"]["live"])
+        stats = dict(instance["routes"])
+        stats["rows"] = [dict(stats["rows"][0], route="x" * 400)]
+        stats["error"] = "y" * 400
+        instance["routes"] = stats
+        snapshot["instances"] = {"live": instance}
+        for width in (40, 60, 92, 120):
+            for line in ui.build(snapshot, CONFIG, "live", width, 40, version="1.0"):
+                self.assertLessEqual(sum(len(t) for t, _s in line), width)
 
 
 class DegradedTest(unittest.TestCase):

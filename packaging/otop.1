@@ -1,4 +1,4 @@
-.TH OTOP 1 "August 2026" "otop 1.0.0" "System Administration"
+.TH OTOP 1 "August 2026" "otop 1.1.0" "System Administration"
 .SH NAME
 otop \- htop/btop for Odoo: terminal monitor for Odoo workers, PostgreSQL and server resources
 .SH SYNOPSIS
@@ -7,9 +7,9 @@ otop \- htop/btop for Odoo: terminal monitor for Odoo workers, PostgreSQL and se
 .SH DESCRIPTION
 .B otop
 is a compact, interactive terminal monitor for servers running Odoo. It shows
-server load, the Odoo worker processes of each configured instance, storage
-(total disk first, then database, filestore and other), PostgreSQL activity,
-disk I/O and network throughput.
+server load, the Odoo worker processes of each configured instance, the slowest
+and heaviest routes, storage (total disk first, then database, filestore and
+other), PostgreSQL activity, disk I/O and network throughput.
 .PP
 Cheap metrics refresh every couple of seconds; expensive ones (filestore
 directory size, database size, table sizes) are cached and refreshed on much
@@ -52,6 +52,9 @@ its position with the number keys, or cycled with \fBTab\fR.
 .B p
 Pause and resume sampling.
 .TP
+.B t
+Sort the ROUTES table: total time, slowest, average, calls.
+.TP
 .B ?
 Help, including the meaning of every status marker.
 .SH WORKER STATUS
@@ -75,6 +78,31 @@ picked up yet.
 .PP
 Reading a worker's sockets requires running as root or as the Odoo user;
 otherwise otop falls back to a CPU-based approximation and says so.
+.SH ROUTES
+The
+.B ROUTES
+panel tails the instance's own Odoo log file, which carries one line per
+finished request with its SQL query count, its SQL time and its remaining
+(Python) time. Requests are grouped by
+.IR model.method
+for RPC calls and by URL otherwise, with ids and asset hashes folded to
+.BR * ,
+over a rolling window
+.RB ( routes_window ,
+15 minutes by default).
+.PP
+The log path is taken from
+.I odoo.conf
+or from the running master's
+.B \-\-logfile
+argument; an instance that logs to standard output or the journal has no route
+statistics, and the panel says so rather than showing an empty table. Requests
+killed by
+.B limit_time_real
+or
+.B limit_time_cpu
+never reach the logger and can therefore be missing from the table entirely.
+Timings are Odoo-internal and exclude the proxy, the network and the browser.
 .SH FILES
 .TP
 .I /etc/otop/config.yaml

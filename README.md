@@ -1,8 +1,8 @@
 # otop
 
 **htop/btop for Odoo.** A compact terminal monitor for Odoo servers: worker
-processes, PostgreSQL, storage and server load, for LIVE and STAGING side by
-side.
+processes, slow routes, PostgreSQL, storage and server load, for LIVE and
+STAGING side by side.
 
 ```
 otop
@@ -13,7 +13,7 @@ external service, no database of its own. One process, one terminal, curses from
 the Python standard library.
 
 ```
-OTOP 1.0.0  odoo-prod up 41d02h    LIVE   STAGING                        09:14:22
+OTOP 1.1.0  odoo-prod up 41d02h    LIVE   STAGING                        09:14:22
 CPU  [|||||||           ]  38%  cores 8 .=:. -#:  LOAD 2.41 2.02 1.88
 RAM  [|||||||||||       ]  62%  9.9 GB / 16 GB  free 6.1 GB
 SWAP [||                ]   8%  0.6 GB / 8.0 GB
@@ -25,6 +25,15 @@ PID     ROLE       CPU      RAM    UPTIME STATUS     BUSY%  DB
 12401   http       82%   420 MB    12h04m * BUSY      68%  active 0.4s
 12403   http        2%   390 MB    12h04m o IDLE       9%  idle
 12409   cron        1%   175 MB    12h04m o IDLE       2%  idle
+
+ROUTES  last 15m00s  4182 req 4.6/s  12 err  by total time
+   CALLS      AVG      P95      MAX SQL/req  SQL%  ROUTE
+       6    52.1s    59.2s    59.2s     412   71%  pos.session.load_data
+     318    412ms    1.10s    2.31s      96   38%  pos.order.sync_from_ui
+    1204     34ms     91ms    310ms       7   52%  stock.picking.type.web_search_read
+      41    198ms    402ms    980ms      54   61%  account.move.action_post
+     840     11ms     22ms    140ms       2   18%  GET /web/assets/*/web.assets_backend.min.js
+  ... 62 more route(s)
 
 STORAGE
 /     [||||||||||||      ]  64%  320 GB / 500 GB   free 180 GB
@@ -38,7 +47,7 @@ CONN 86   ACTIVE 18   IDLE 64   IDLE-TX 4   WAITING 4   LONGEST 12.4s
   account_move_line             41 GB   idx 12 GB
 
 DISK   R 42.1 MB/s   W 18.0 MB/s   (620/210 iops)   IOWAIT 7%   NET   RX 12 MB/s   TX 4 MB/s
-quit refresh live staging tab next pause ? help                        sample 0.4s ago
+quit refresh live staging tab next pause t sort ? help                 sample 0.4s ago
 ```
 
 ---
@@ -69,8 +78,8 @@ sudo apt update && sudo apt install otop
 ### Debian / Ubuntu package file
 
 ```bash
-./packaging/build-deb.sh              # produces otop_1.0.0_all.deb
-sudo apt install ./otop_1.0.0_all.deb
+./packaging/build-deb.sh              # produces otop_1.1.0_all.deb
+sudo apt install ./otop_1.1.0_all.deb
 sudo $EDITOR /etc/otop/config.yaml
 otop
 ```
@@ -79,7 +88,7 @@ No virtualenv to activate: the package installs `/usr/bin/otop` and depends on
 the distribution's `python3-psutil` and `python3-yaml` (plus
 `python3-psycopg2`, recommended, for the PostgreSQL panel).
 
-`build-deb.sh --arch amd64` produces `otop_1.0.0_amd64.deb` if a
+`build-deb.sh --arch amd64` produces `otop_1.1.0_amd64.deb` if a
 machine-specific filename is wanted. The default is `all` because otop is pure
 Python and an `Architecture: all` package installs on amd64, arm64 and anything
 else.
@@ -126,6 +135,10 @@ disk_path: /
 long_query_seconds: 5
 show_query_text: true
 
+routes: true           # ROUTES panel: tail the Odoo access log
+routes_window: 900     # rolling window for the route statistics, seconds
+routes_max_events: 20000   # hard cap on remembered requests, per instance
+
 instances:
   live:
     name: LIVE
@@ -145,9 +158,15 @@ otop reads from it:
 | `db_host`, `db_port`, `db_user`, `db_password` | PostgreSQL connection |
 | `http_port` | busy-worker detection and queue depth |
 | `workers`, `max_cron_threads` | expected worker counts |
+| `logfile` | the access log behind the ROUTES panel |
+
+When `logfile` is not in the configuration file — CloudPepper and most systemd
+units pass `--logfile` on the command line instead — otop reads it from the
+running master's own command line and resolves it against that process's
+working directory, so a relative path still works.
 
 Every one of those can be overridden per instance (`database:`, `filestore:`,
-`http_port:`, `process_match:`, `db: {host, port, user, password}`), and an
+`http_port:`, `process_match:`, `logfile:`, `db: {host, port, user, password}`), and an
 instance can be configured entirely by hand with no `odoo_conf` at all. Nothing
 is hard-coded in otop; credentials stay in the configuration files and are never
 displayed.
@@ -193,6 +212,7 @@ otop --config ./my.yaml
 | `1`…`9` | switch to instance by position |
 | `Tab` | next instance |
 | `p` | pause / resume sampling |
+| `t` | sort ROUTES: total time → slowest → average → calls |
 | `?` | help, including what every marker means |
 
 The layout adapts to the terminal: sections shrink (fewer worker rows, fewer
@@ -210,6 +230,8 @@ the 1/5/15 minute load average, coloured against the core count.
 **SWAP** — sustained swap use on an Odoo box is a red flag.
 
 **ODOO WORKERS** — see the next section.
+
+**ROUTES** — see *Slow routes* below.
 
 **STORAGE** — total disk usage of `disk_path` first, then the breakdown:
 database (`pg_database_size`, refreshed every 30 s), filestore (the real
@@ -289,9 +311,69 @@ Limits, stated plainly:
 * **Threaded mode** (`workers = 0`) has no worker processes at all. otop then
   reports requests *in flight* (established connections on the HTTP port) and the
   thread count, and says that per-request thread detail is not available.
-* True request-level status (current route, request duration, queue time) would
-  need instrumentation inside Odoo — for example a small addon exposing a status
-  endpoint. It is deliberately **not** faked here.
+* Knowing **which route** a worker is running *right now* would need
+  instrumentation inside Odoo — for example a small addon exposing a status
+  endpoint. It is deliberately **not** faked here. What every request *cost* is
+  available after the fact, from the log: that is the ROUTES panel below.
+
+---
+
+## Slow routes
+
+Odoo writes one line per finished request through the `werkzeug` logger, and
+`odoo.netsvc.PerfFilter` appends the SQL query count, the time spent in SQL and
+the time spent outside it:
+
+```
+… werkzeug: 1.2.3.4 - - [30/Jul/2026 18:36:11] "POST
+  /web/dataset/call_kw/res.partner/web_search_read#res.partner.web_search_read
+  HTTP/1.1" 200 - 62 0.034 0.066
+                    ↑  ↑     ↑
+                    │  │     seconds outside SQL: Python, rendering, locks
+                    │  seconds in SQL
+                    SQL queries
+```
+
+The ROUTES panel tails that file — only the bytes appended since the last poll,
+never a re-read — and aggregates a rolling `routes_window` (15 minutes by
+default):
+
+| column | meaning |
+|---|---|
+| CALLS | requests for this route in the window |
+| AVG / P95 / MAX | wall time per request = SQL time + Python time |
+| SQL/req | average number of SQL queries per request |
+| SQL% | share of the total time spent in the database |
+| ROUTE | `model.method` for RPC calls, `METHOD /path` otherwise |
+
+Routes are grouped by what Odoo itself resolved: since Odoo 16 an RPC path
+carries a `#model.method` fragment, which is the only reason this is useful —
+`/web/dataset/call_kw` alone would lump the whole backend into one row. Other
+URLs are grouped with ids, slugs and asset hashes folded to `*`
+(`/web/content/1234-abcdef/logo.png` → `GET /web/content/*/logo.png`). A route
+with failed requests gets an `(n err)` marker; `t` re-sorts the table.
+
+SQL% is what makes it actionable: a slow route at 80% SQL is an ORM or index
+problem, the same route at 10% SQL is Python.
+
+What the log cannot tell you, and what otop therefore does not claim:
+
+* **Requests killed by `limit_time_real` / `limit_time_cpu` never reach the
+  logger.** The very worst offenders can be missing from this table entirely.
+  `QUEUED` and the worker `BUSY%` are the companion signals.
+* Timings are Odoo-internal: no proxy, no network, no browser time.
+* Only the tail of an existing log is read at startup (1 MB), so on a busy
+  server the window fills up as requests arrive rather than being back-filled
+  from the whole file.
+* Requests logged without timings (`- - -`, a request that bypassed the perf
+  filter) are counted separately and excluded from the statistics.
+* Nothing is shown at all when an instance has no log file (`--logfile` /
+  `logfile =` unset — it logs to stdout or the journal) or runs above INFO
+  level. The panel says which, instead of showing an empty table.
+* Log rotation is handled both ways: a new inode, and `copytruncate` — which is
+  what Odoo's own logrotate config uses.
+
+Set `routes: false` to switch the panel off entirely.
 
 ---
 
@@ -304,6 +386,9 @@ is rebuilt only every `discovery` seconds, and in between a single read of
 Per worker, each sample reads a handful of small `/proc` files. Sockets come from
 one read of `/proc/net/tcp` plus the file descriptors of the Odoo workers only.
 Filestore walks happen at most every `filestore` seconds in their own thread.
+The access log is tailed incrementally — each poll reads only the bytes appended
+since the previous one, and the rolling window is capped at
+`routes_max_events` requests per instance.
 
 Measured on a 4-core laptop, interface running at the default 2 s refresh and
 monitoring two Odoo instances (one with 5 worker processes): **1.2 % of one core
@@ -322,6 +407,9 @@ otop keeps running and shows `N/A` or a short reason when:
 | filestore path missing | `not found: …` in the storage row |
 | `odoo.conf` unreadable | a note under the worker panel |
 | `/proc/<pid>/fd` not readable | status falls back to `~` approximation, with a note |
+| no access log configured | `no access log: this instance has no --logfile` |
+| access log missing or unreadable | the reason in the ROUTES panel; retried each poll |
+| access log rotated (both styles) | tailing resumes, statistics kept |
 | psycopg not installed | PostgreSQL panel disabled, everything else works |
 | terminal too small | a message instead of a broken layout |
 
@@ -333,7 +421,7 @@ otop keeps running and shows `N/A` or a short reason when:
 ./packaging/build-deb.sh                     # 1. build the package
 ./packaging/apt-repo.sh --generate-key       # 2. first time only: create the
                                              #    signing key, then build docs/
-git add docs && git commit -m "apt repository for otop 1.0.0" && git push
+git add docs && git commit -m "apt repository for otop 1.1.0" && git push
 ```
 
 `docs/` is then served straight from the repository over

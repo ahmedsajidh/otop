@@ -50,6 +50,27 @@ def human_seconds(value, na=NA):
     return "%dd%02dh" % (value // 86400, (value % 86400) // 3600)
 
 
+def human_duration(value, na=NA):
+    """Like human_seconds, but readable below a second: 34ms, 1.20s, 59.2s."""
+    if value is None:
+        return na
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return na
+    if value < 0:
+        return na
+    if value < 0.0005:
+        return "0ms"
+    if value < 1:
+        return "%.0fms" % (value * 1000)
+    if value < 10:
+        return "%.2fs" % value
+    if value < 60:
+        return "%.1fs" % value
+    return human_seconds(value)
+
+
 def human_count(value, na=NA):
     return na if value is None else str(value)
 
